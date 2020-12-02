@@ -20,11 +20,11 @@ contract('CurrencyETHOnly', (accounts) => {
     const membersRole = 'members';
     const membersRoleWrong = 'wrong-role';
     
-    
     it('should deployed correctly with correctly owner', async () => {
         const pricesContractInstance = await PricesContractMock.new();
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyETHOnlyInstance = await CurrencyETHOnly.new('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const currencyETHOnlyInstance = await CurrencyETHOnly.new();
+        await currencyETHOnlyInstance.init('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
         
         const owner = (await currencyETHOnlyInstance.owner.call());
         assert.equal(owner, accountOne, 'owner is not accountOne');
@@ -34,7 +34,8 @@ contract('CurrencyETHOnly', (accounts) => {
     it('should used transferOwnership by owner only', async () => {
         const pricesContractInstance = await PricesContractMock.new();
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyETHOnlyInstance = await CurrencyETHOnly.new('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const currencyETHOnlyInstance = await CurrencyETHOnly.new();
+        await currencyETHOnlyInstance.init('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
       
         await truffleAssert.reverts(
             currencyETHOnlyInstance.transferOwnership(accountTwo, { from: accountTwo }), 
@@ -47,8 +48,10 @@ contract('CurrencyETHOnly', (accounts) => {
     it('should add address TokenForClaiming to list', async () => {
         const pricesContractInstance = await PricesContractMock.new();
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyETHOnlyInstance = await CurrencyETHOnly.new('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-        const ERC20MintableTokenInstance = await ERC20MintableToken.new('t2','t2');
+        const currencyETHOnlyInstance = await CurrencyETHOnly.new();
+        await currencyETHOnlyInstance.init('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const ERC20MintableTokenInstance = await ERC20MintableToken.new();
+        await ERC20MintableTokenInstance.init('t2','t2');
         
         await truffleAssert.reverts(
             currencyETHOnlyInstance.claimingTokenAdd(ERC20MintableTokenInstance.address, { from: accountTwo }), 
@@ -74,8 +77,10 @@ contract('CurrencyETHOnly', (accounts) => {
         // setup
         const pricesContractInstance = await PricesContractMock.new();
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyETHOnlyInstance = await CurrencyETHOnly.new('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-        const ERC20MintableTokenInstance = await ERC20MintableToken.new('t2','t2');
+        const currencyETHOnlyInstance = await CurrencyETHOnly.new();
+        await currencyETHOnlyInstance.init('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const ERC20MintableTokenInstance = await ERC20MintableToken.new();
+        await ERC20MintableTokenInstance.init('t2','t2');
         
         const grantAmount = (10*10**18).toString(16);
         
@@ -96,8 +101,10 @@ contract('CurrencyETHOnly', (accounts) => {
         // setup
         const pricesContractInstance = await PricesContractMock.new();
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyETHOnlyInstance = await CurrencyETHOnly.new('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-        const ERC20MintableTokenInstance = await ERC20MintableToken.new('t2','t2');
+        const currencyETHOnlyInstance = await CurrencyETHOnly.new();
+        await currencyETHOnlyInstance.init('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const ERC20MintableTokenInstance = await ERC20MintableToken.new();
+        await ERC20MintableTokenInstance.init('t2','t2');
         
         const grantAmount = (10*10**18).toString(16);
         
@@ -120,8 +127,10 @@ contract('CurrencyETHOnly', (accounts) => {
         // setup
         const pricesContractInstance = await PricesContractMock.new();
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyETHOnlyInstance = await CurrencyETHOnly.new('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-        const ERC20MintableTokenInstance = await ERC20MintableToken.new('t2','t2');
+        const currencyETHOnlyInstance = await CurrencyETHOnly.new();
+        await currencyETHOnlyInstance.init('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const ERC20MintableTokenInstance = await ERC20MintableToken.new();
+        await ERC20MintableTokenInstance.init('t2','t2');
         const currentBlockInfo = await web3.eth.getBlock("latest");
         const grantAmount = (10*10**18).toString(16);
      
@@ -156,7 +165,8 @@ contract('CurrencyETHOnly', (accounts) => {
     it('should prevent transfer if not in community `whitelist` role', async () => {
         const pricesContractInstance = await PricesContractMock.new();
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyETHOnlyInstance = await CurrencyETHOnly.new('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRoleWrong);
+        const currencyETHOnlyInstance = await CurrencyETHOnly.new();
+        await currencyETHOnlyInstance.init('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRoleWrong);
         const amountETHSendToContract = 10*10**18; // 10ETH
         
         
@@ -203,7 +213,8 @@ contract('CurrencyETHOnly', (accounts) => {
     it('should exchange Token/ETH', async () => {
         const pricesContractInstance = await PricesContractMock.new();
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyETHOnlyInstance = await CurrencyETHOnly.new('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const currencyETHOnlyInstance = await CurrencyETHOnly.new();
+        await currencyETHOnlyInstance.init('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
         const amountETHSendToContract = 10*10**18; // 10ETH
         
         
@@ -306,7 +317,8 @@ contract('CurrencyETHOnly', (accounts) => {
     it('test prices hook', async () => {
         const pricesContractInstance = await PricesContractMock.new();
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyETHOnlyInstance = await CurrencyETHOnly.new('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const currencyETHOnlyInstance = await CurrencyETHOnly.new();
+        await currencyETHOnlyInstance.init('t1','t1', pricesContractInstance.address, CommunityMockInstance.address, membersRole);
         const grantAmount2 = (2*10**18).toString(16);
         const grantAmount3 = (3*10**18).toString(16);
         const amountETHSendToContract = 10*10**18; // 10ETH

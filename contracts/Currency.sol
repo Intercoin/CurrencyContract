@@ -2,25 +2,22 @@
 pragma solidity >=0.6.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
-import "./CommonConstants.sol";
 import "./CurrencyBase.sol";
 import "./IPricesContract.sol";
 
 contract Currency is CurrencyBase {
     using Address for address;
     
-    uint256 private _sellExchangeRate = 99e4; // 99% * 1e6
-    uint256 private _buyExchangeRate = 100e4; // 100% *1e6
-    
     address private token2;
     
     /**
      * @param name Token name
      * @param symbol Token symbol
-     * @param secondary_token SecondaryToken address instead ETH
-     * 
+     * @param pricesContractAddress address of PricesContract
+     * @param community address of CommunityContract
+     * @param roleName whitelist role name
      */
-    constructor (
+    function init(
         string memory name, 
         string memory symbol,
         address secondary_token,
@@ -28,9 +25,10 @@ contract Currency is CurrencyBase {
         ICommunity community,
         string memory roleName
     ) 
-        CurrencyBase(name, symbol, pricesContractAddress, community, roleName) 
         public 
+        initializer 
     {
+        super.init( name, symbol, pricesContractAddress, community, roleName);
         require(secondary_token.isContract(), 'secondary_token must be a contract address');
         token2 = secondary_token;
     }

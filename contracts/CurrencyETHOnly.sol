@@ -7,32 +7,11 @@ import "./IPricesContract.sol";
 
 contract CurrencyETHOnly is CurrencyBase {
     
-    uint256 private _sellExchangeRate = 99e4; // 99% * 1e6
-    uint256 private _buyExchangeRate = 100e4; // 100% *1e6
-    
-    /**
-     * @param name Token name
-     * @param symbol Token symbol
-     * 
-     */
-    constructor (
-        string memory name, 
-        string memory symbol,
-        IPricesContract pricesContractAddress,
-        ICommunity community,
-        string memory roleName
-    ) 
-        CurrencyBase(name, symbol, pricesContractAddress, community, roleName) 
-        public 
-    {
-    }
-    
     /**
      * Used for donate ETH without receiving token
      */
     function donateETH() public payable validGasPrice nonReentrant() {
     }
-
 
     /**
      * @dev overall balance (in this case - eth)

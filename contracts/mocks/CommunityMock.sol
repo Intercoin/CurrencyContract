@@ -1,11 +1,9 @@
 pragma solidity >=0.6.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
-
-import "../openzeppelin-contracts/contracts/access/Ownable.sol";
 import "../ICommunity.sol";
 
-contract CommunityMock is Ownable, ICommunity {
+contract CommunityMock is ICommunity {
     uint256 count = 5;
     
     function memberCount(string memory role) public override view returns(uint256) {

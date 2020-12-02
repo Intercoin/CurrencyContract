@@ -2,55 +2,60 @@
 pragma solidity >=0.6.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
-import "./openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import "./openzeppelin-contracts/contracts/access/Ownable.sol";
-import "./openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/utils/ReentrancyGuard.sol";
 
 
-import "./CommonConstants.sol";
 import "./Claimed.sol";
 import "./IPricesContract.sol";
 import "./ICommunity.sol";
 
-contract CurrencyBase is ERC20, Ownable, CommonConstants, Claimed, ReentrancyGuard {
+contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, ReentrancyGuardUpgradeSafe {
     using SafeMath for uint256;
     using Address for address;
     
-    uint256 public maxGasPrice = 1 * DECIMALS;
+    // Fraction part. means 1e18
+    uint256 constant internal DECIMALS = 10**18;
+    
+    uint256 internal _sellExchangeRate;
+    uint256 internal _buyExchangeRate;
+    
+    uint256 public maxGasPrice;
     
     uint256 startTime;
     
-    uint256 constant claimMorePerSeconds = 10 * DECIMALS;
+    uint256 internal claimMorePerSeconds = 10 * DECIMALS;
 
     // initial amount that can be claimed by contract without transactions failing
-    uint256 constant claimInitialMax = 1000000 * DECIMALS;
+    uint256 internal claimInitialMax = 1000000 * DECIMALS;
     
     // amount that can be claimed one-time by contract without transactions failing
-    uint256 tokensClaimOneTimeLimit = 1000000 * DECIMALS;
+    uint256 internal tokensClaimOneTimeLimit = 1000000 * DECIMALS;
     
     // consider total token2 balance held at start of block when sending, 
     // claim fails if we would have new token1outstanding * exchangeRate > token2balance * (100 - this number) / 100
-    uint256 claimReserveMinPercent = 20;
+    uint256 internal claimReserveMinPercent = 20;
     
     // consider total token2 balance held at start of block when sending, 
     // claim fails if token1beingSent * exchangeRate > token2balance * this number / 100
-    uint256 claimTransactionMaxPercent = 2;
+    uint256 internal claimTransactionMaxPercent = 2;
     
     // deficit = token1outstanding * exchangeRate - token2balance . 
     // claim fails if claimDeficitMax exceeds this number.
-    uint256 constant claimDeficitMax = 1000000 * DECIMALS;
+    uint256 internal claimDeficitMax = 1000000 * DECIMALS;
     
     // claim discount
-    uint256 claimReserveExchangeRate = 99e4;
+    uint256 internal claimReserveExchangeRate = 99e4;
     
     // total claimed
-    uint256 claimTotal = 0;
+    uint256 claimTotal;
     
     // default variable for claim permissions
-    uint256 claimLockupPeriod = 100; // seconds
-    bool claimGradual = true;
+    uint256 internal claimLockupPeriod = 100; // seconds
+    bool internal claimGradual = true;
     
-    uint256 private tokensForClaimingCount = 0;
+    uint256 private tokensForClaimingCount;
     address[] private tokensForClaiming;
     mapping (address => bool) private tokensForClaimingMap;
     
@@ -93,24 +98,50 @@ contract CurrencyBase is ERC20, Ownable, CommonConstants, Claimed, ReentrancyGua
     /**
      * @param name Token name
      * @param symbol Token symbol
-     * 
+     * @param pricesContractAddress address of PricesContract
+     * @param community address of CommunityContract
+     * @param roleName whitelist role name
      */
-    constructor (
+    function init(
         string memory name, 
         string memory symbol,
         IPricesContract pricesContractAddress,
         ICommunity community,
         string memory roleName
     ) 
-        ERC20(name, symbol) 
         public 
+        initializer 
     {
+        
+        __Ownable_init();
+        __ReentrancyGuard_init();
+        __ERC20_init(name, symbol);
+		
+		
         startTime = now;
         pricesAddress = pricesContractAddress;
         
         communityAddress = community;
         communityRole = roleName;
     
+        claimTotal = 0;
+        maxGasPrice = 1 * DECIMALS;
+        tokensForClaimingCount = 0;
+        
+        _sellExchangeRate = 99e4; // 99% * 1e6
+        _buyExchangeRate = 100e4; // 100% *1e6
+        
+        claimMorePerSeconds = 10 * DECIMALS;
+        claimInitialMax = 1000000 * DECIMALS;
+        tokensClaimOneTimeLimit = 1000000 * DECIMALS;
+        claimReserveMinPercent = 20;
+        claimTransactionMaxPercent = 2;
+        claimDeficitMax = 1000000 * DECIMALS;
+        claimReserveExchangeRate = 99e4;
+        claimLockupPeriod = 100;
+        claimGradual = true;
+    
+        
     }
     
     modifier validGasPrice() {

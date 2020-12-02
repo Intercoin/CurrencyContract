@@ -2,11 +2,11 @@
 pragma solidity >=0.6.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
-import "../openzeppelin-contracts/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
 import "../Currency.sol";
 import "../IPricesContract.sol";
 
-contract CurrencyFactory is Ownable{
+contract CurrencyFactory is OwnableUpgradeSafe{
     
     Currency[] public currencyAddresses;
     
@@ -23,7 +23,8 @@ contract CurrencyFactory is Ownable{
     ) 
         public 
     {
-        Currency currency = new Currency(name, symbol, secondary_token, pricesContractAddress, community, roleName);
+        Currency currency = new Currency();
+        currency.init(name, symbol, secondary_token, pricesContractAddress, community, roleName);
         currencyAddresses.push(currency);
         emit CurrencyCreated(currency);
         currency.transferOwnership(_msgSender());

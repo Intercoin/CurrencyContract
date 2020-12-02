@@ -23,9 +23,11 @@ contract('Currency', (accounts) => {
 
     it('should deployed correctly with correctly owner', async () => {
         const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new('t2','t2');
+        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
+        await ERC20MintableToken2Instance.init('t2','t2');
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const currencyInstance = await Currency.new();
+        await currencyInstance.init('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
         
         const owner = (await currencyInstance.owner.call());
         assert.equal(owner, accountOne, 'owner is not accountOne');
@@ -34,9 +36,11 @@ contract('Currency', (accounts) => {
 
     it('should used transferOwnership by owner only', async () => {
         const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new('t2','t2');
+        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
+        await ERC20MintableToken2Instance.init('t2','t2');
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const currencyInstance = await Currency.new();
+        await currencyInstance.init('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
       
         await truffleAssert.reverts(
             currencyInstance.transferOwnership(accountTwo, { from: accountTwo }), 
@@ -48,10 +52,13 @@ contract('Currency', (accounts) => {
 
     it('should add address TokenForClaiming to list', async () => {
         const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new('t2','t2');
+        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
+        await ERC20MintableToken2Instance.init('t2','t2');
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-        const ERC20MintableTokenInstance = await ERC20MintableToken.new('t2','t2');
+        const currencyInstance = await Currency.new();
+        await currencyInstance.init('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const ERC20MintableTokenInstance = await ERC20MintableToken.new();
+        await ERC20MintableTokenInstance.init('t2','t2');
         
         await truffleAssert.reverts(
             currencyInstance.claimingTokenAdd(ERC20MintableTokenInstance.address, { from: accountTwo }), 
@@ -76,10 +83,13 @@ contract('Currency', (accounts) => {
     it('should revert claim if it wasn\'t approve tokens before', async () => {
         // setup
         const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new('t2','t2');
+        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
+        await ERC20MintableToken2Instance.init('t2','t2');
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-        const ERC20MintableTokenInstance = await ERC20MintableToken.new('t2','t2');
+        const currencyInstance = await Currency.new();
+        await currencyInstance.init('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const ERC20MintableTokenInstance = await ERC20MintableToken.new();
+        await ERC20MintableTokenInstance.init('t2','t2');
         
         const grantAmount = (10*10**18).toString(16);
         
@@ -99,10 +109,13 @@ contract('Currency', (accounts) => {
     it('should revert claim if it wasn\'t added TokenForClaiming before', async () => {
         // setup
         const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new('t2','t2');
+        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
+        await ERC20MintableToken2Instance.init('t2','t2');
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-        const ERC20MintableTokenInstance = await ERC20MintableToken.new('t2','t2');
+        const currencyInstance = await Currency.new();
+        await currencyInstance.init('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const ERC20MintableTokenInstance = await ERC20MintableToken.new();
+        await ERC20MintableTokenInstance.init('t2','t2');
         
         const grantAmount = (10*10**18).toString(16);
         
@@ -124,10 +137,13 @@ contract('Currency', (accounts) => {
       
         // setup
         const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new('t2','t2');
+        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
+        await ERC20MintableToken2Instance.init('t2','t2');
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-        const ERC20MintableTokenInstance = await ERC20MintableToken.new('t2','t2');
+        const currencyInstance = await Currency.new();
+        await currencyInstance.init('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const ERC20MintableTokenInstance = await ERC20MintableToken.new();
+        await ERC20MintableTokenInstance.init('t2','t2');
         const currentBlockInfo = await web3.eth.getBlock("latest");
         const grantAmount = (10*10**18).toString(16);
      
@@ -159,9 +175,11 @@ contract('Currency', (accounts) => {
 
     it('should prevent transfer if not in community `whitelist` role', async () => {
         const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new('t2','t2');
+        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
+        await ERC20MintableToken2Instance.init('t2','t2');
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new('t1','t1',ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRoleWrong);
+        const currencyInstance = await Currency.new();
+        await currencyInstance.init('t1','t1',ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRoleWrong);
         const amountT2SendToContract = (10*10**18).toString(16);; // 10 token2
         
         
@@ -210,9 +228,11 @@ contract('Currency', (accounts) => {
     
     it('should exchange Token/Token2', async () => {
         const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new('t2','t2');
+        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
+        await ERC20MintableToken2Instance.init('t2','t2');
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new('t1','t1',ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const currencyInstance = await Currency.new();
+        await currencyInstance.init('t1','t1',ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
         const amountT2SendToContract = (10*10**18).toString(16);; // 10 token2
         
         
@@ -317,9 +337,11 @@ contract('Currency', (accounts) => {
     it('test prices hook', async () => {
         
         const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new('t2','t2');
+        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
+        await ERC20MintableToken2Instance.init('t2','t2');
         const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new('t1','t1',ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        const currencyInstance = await Currency.new();
+        await currencyInstance.init('t1','t1',ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
         
         
         const grantAmount2 = (2*10**18).toString(16);

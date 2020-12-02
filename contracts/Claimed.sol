@@ -1,6 +1,6 @@
 pragma solidity >=0.6.0 <0.7.0;
 
-import "./openzeppelin-contracts/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
 
 /**
  * Realization a restriction limits for user transfer
