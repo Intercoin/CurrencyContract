@@ -1,4 +1,7 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.6.0 <0.7.0;
+pragma experimental ABIEncoderV2;
+
 import "../CurrencyETHOnly.sol";
 import "../IPricesContract.sol";
 
@@ -12,9 +15,11 @@ contract CurrencyETHOnlyMock is CurrencyETHOnly {
     constructor (
         string memory name, 
         string memory symbol,
-        IPricesContract pricesContractAddress
+        IPricesContract pricesContractAddress,
+        ICommunity community,
+        string memory roleName
     ) 
-        CurrencyETHOnly(name, symbol, pricesContractAddress) 
+        CurrencyETHOnly(name, symbol, pricesContractAddress, community, roleName) 
         public 
     {
 //        _discount = discount;

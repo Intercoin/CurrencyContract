@@ -1,15 +1,18 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.6.0 <0.7.0;
+pragma experimental ABIEncoderV2;
 
 import "./openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import "./openzeppelin-contracts/contracts/access/Ownable.sol";
 import "./openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 
-import "./Whitelist.sol";
+
 import "./CommonConstants.sol";
 import "./Claimed.sol";
 import "./IPricesContract.sol";
+import "./ICommunity.sol";
 
-contract CurrencyBase is ERC20, Ownable, CommonConstants, Whitelist, Claimed, ReentrancyGuard {
+contract CurrencyBase is ERC20, Ownable, CommonConstants, Claimed, ReentrancyGuard {
     using SafeMath for uint256;
     using Address for address;
     
@@ -52,6 +55,12 @@ contract CurrencyBase is ERC20, Ownable, CommonConstants, Whitelist, Claimed, Re
     mapping (address => bool) private tokensForClaimingMap;
     
     IPricesContract pricesAddress;
+    
+    
+    ICommunity private communityAddress;
+    string private communityRole;
+    
+    
     event StatAdded(address indexed recipient, uint256 amount);
     
     modifier onlyPassTransferLimit(uint256 amount) {
@@ -63,6 +72,22 @@ contract CurrencyBase is ERC20, Ownable, CommonConstants, Whitelist, Claimed, Re
         _;
     }
 
+
+    modifier canReceiveTokens() {
+        bool s = false;
+        string[] memory roles = ICommunity(communityAddress).getRoles(msg.sender);
+        for (uint256 i=0; i< roles.length; i++) {
+            
+            if (keccak256(abi.encodePacked(communityRole)) == keccak256(abi.encodePacked(roles[i]))) {
+                s = true;
+            }
+        }
+        
+        require(s == true, "Sender is not in whitelist");
+        
+        _;
+    }
+    
     event claimingTokenAdded(address token);
     
     /**
@@ -73,14 +98,19 @@ contract CurrencyBase is ERC20, Ownable, CommonConstants, Whitelist, Claimed, Re
     constructor (
         string memory name, 
         string memory symbol,
-        IPricesContract pricesContractAddress
+        IPricesContract pricesContractAddress,
+        ICommunity community,
+        string memory roleName
     ) 
         ERC20(name, symbol) 
-        Whitelist() 
         public 
     {
         startTime = now;
         pricesAddress = pricesContractAddress;
+        
+        communityAddress = community;
+        communityRole = roleName;
+    
     }
     
     modifier validGasPrice() {
@@ -240,7 +270,7 @@ contract CurrencyBase is ERC20, Ownable, CommonConstants, Whitelist, Claimed, Re
      * Available only to recipient in whitelist
      * @param tokensAmount tokens amount
      */
-    function _receivedToken(uint256 tokensAmount) internal onlyWhitelist {
+    function _receivedToken(uint256 tokensAmount) internal canReceiveTokens {
         
         uint256 balanceToken2 = _overallBalance2();
         uint256 amount2send = tokensAmount.mul(sellExchangeRate()).div(1e6); // "sell exchange" interpretation with rate discount
@@ -275,6 +305,7 @@ contract CurrencyBase is ERC20, Ownable, CommonConstants, Whitelist, Claimed, Re
         uint256 amount2mint = amount.mul(buyExchangeRate()).div(1e6); // "buy exchange" interpretation with rate 100%
         _mint(_msgSender(), amount2mint);
     } 
+    
 }
 
 

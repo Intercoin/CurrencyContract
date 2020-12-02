@@ -1,4 +1,7 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.6.0 <0.7.0;
+pragma experimental ABIEncoderV2;
+
 import "./CommonConstants.sol";
 import "./CurrencyBase.sol";
 import "./IPricesContract.sol";
@@ -21,9 +24,11 @@ contract Currency is CurrencyBase {
         string memory name, 
         string memory symbol,
         address secondary_token,
-        IPricesContract pricesContractAddress
+        IPricesContract pricesContractAddress,
+        ICommunity community,
+        string memory roleName
     ) 
-        CurrencyBase(name, symbol, pricesContractAddress) 
+        CurrencyBase(name, symbol, pricesContractAddress, community, roleName) 
         public 
     {
         require(secondary_token.isContract(), 'secondary_token must be a contract address');

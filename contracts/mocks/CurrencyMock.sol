@@ -1,4 +1,6 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.6.0 <0.7.0;
+pragma experimental ABIEncoderV2;
 
 import "../Currency.sol";
 import "../IPricesContract.sol";
@@ -14,9 +16,11 @@ contract CurrencyMock is Currency {
         string memory name, 
         string memory symbol,
         address secondary_token,
-        IPricesContract pricesContractAddress
+        IPricesContract pricesContractAddress,
+        ICommunity community,
+        string memory roleName
     ) 
-        Currency(name, symbol, secondary_token, pricesContractAddress) 
+        Currency(name, symbol, secondary_token, pricesContractAddress, community, roleName) 
         public 
     {
 //        _discount = discount;
