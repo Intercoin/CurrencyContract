@@ -1,10 +1,11 @@
 pragma solidity >=0.6.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
-import "../ICommunity.sol";
+import "../interfaces/ICommunity.sol";
 
 contract CommunityMock is ICommunity {
     uint256 count = 5;
+    address senderMock;
     
     function memberCount(string memory role) public override view returns(uint256) {
         return count;
@@ -26,6 +27,18 @@ contract CommunityMock is ICommunity {
     function getMember(string memory role) public override view returns(address[] memory){
         address[] memory list = new address[](0);
         return list;
+    }
+    
+    function setSender(address sender) public  {
+        senderMock = sender;
+    }
+    
+    function isInvited(address sender, address recipient) external override view returns(bool) {
+        return (sender == senderMock ? true : false);
+    }
+    
+    function whoInvited(address recipient) external override view returns(address) {
+        return senderMock;
     }
     
 }

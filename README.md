@@ -11,6 +11,7 @@ symbol|string|symbol currency token. see ERC20 interface
 secondary_token|address|address for external token. used only in Currency.sol
 pricesContractAddress|address|address for PricesContract.
 community|address|address for <a href="https://github.com/Intercoin/CommunityContract">CommunityContract</a>.
+inviterCommission|uint256|commission (mul by 1e6) to the inviting user, if the user who was invited by the inviter sent a secondary_token(or eth for CurrencyETHOnly). can be zero then reward mechanism will not work
 roleName|string|role name for whitelisted users.
 
 ## Settings

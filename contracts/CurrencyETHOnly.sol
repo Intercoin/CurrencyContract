@@ -24,8 +24,8 @@ contract CurrencyETHOnly is CurrencyBase {
      * @dev internal overrided method. eth will be transfer to sender
      * @param amount2send amount of eth
      */
-    function _receivedTokenAfter(uint256 amount2send) internal virtual override {
-        address payable addr1 = payable(_msgSender()); // correct since Solidity >= 0.6.0
+    function _receivedTokenAfter(address to, uint256 amount2send) internal virtual override {
+        address payable addr1 = payable(to); // correct since Solidity >= 0.6.0
         bool success = addr1.send(amount2send);
         require(success == true, 'Transfer ether was failed'); 
     }
@@ -37,7 +37,14 @@ contract CurrencyETHOnly is CurrencyBase {
     function _receivedETH(uint256 ethAmount) internal virtual override {
         //uint256 amount2send = ethAmount.mul(buyExchangeRate()).div(1e6); // "buy exchange" interpretation with rate 100%
         //_mint(_msgSender(), amount2send);
-        _mintedOwnTokens(ethAmount);
+        
+        uint256 ethAmountLeft = invitersRewardProceed(
+            _msgSender(),
+            ethAmount
+        );
+        uint256 nativeTokensAmount = ethAmountLeft.mul(buyExchangeRate()).div(1e6); // "buy exchange" interpretation with rate 100%
+
+        _mintedOwnTokens(nativeTokensAmount);
     }  
     
     /**

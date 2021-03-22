@@ -1,4 +1,5 @@
 const BN = require('bn.js'); // https://github.com/indutny/bn.js
+const BigNumber = require('bignumber.js');
 const util = require('util');
 const Currency = artifacts.require("Currency");
 const CurrencyMock = artifacts.require("CurrencyMock");
@@ -6,7 +7,6 @@ const CommunityMock = artifacts.require("CommunityMock");
 const ERC20MintableToken = artifacts.require("ERC20Mintable");
 const ERC20MintableToken2 = artifacts.require("ERC20Mintable");
 const PricesContractMock = artifacts.require("PricesContractMock");
-const CurrencyFactory = artifacts.require("CurrencyFactory");
 const truffleAssert = require('truffle-assertions');
 const helper = require("../helpers/truffleTestHelper");
 //0x0000000000000000000000000000000000000000
@@ -20,114 +20,96 @@ contract('Currency', (accounts) => {
     
     const membersRole= 'members';
     const membersRoleWrong = 'wrong-role';
+    
+    const inviterCommission = 30000; // 3% mul 1e6
+    
+    var utilityTokenETHOnlyInstance;
+    var ERC20MintableTokenInstance;
+	var CommunityMockInstance;
+	var pricesContractInstance;
+	
+    beforeEach(async() =>{
+        this.CommunityMockInstance = await CommunityMock.new();
+        this.pricesContractInstance = await PricesContractMock.new();
+        this.ERC20MintableTokenInstance = await ERC20MintableToken.new('t2','t2');
+        this.ERC20MintableToken2Instance = await ERC20MintableToken.new('t2','t2');
+        this.currencyInstance = await CurrencyMock.new();
+
+        await this.currencyInstance.init('t1','t1',this.ERC20MintableToken2Instance.address, this.pricesContractInstance.address, this.CommunityMockInstance.address, inviterCommission, membersRole);
+
+    });
+    
 
     it('should deployed correctly with correctly owner', async () => {
-        const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
-        await ERC20MintableToken2Instance.init('t2','t2');
-        const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new();
-        await currencyInstance.init('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
         
-        const owner = (await currencyInstance.owner.call());
+        const owner = (await this.currencyInstance.owner.call());
         assert.equal(owner, accountOne, 'owner is not accountOne');
         
     });
 
     it('should used transferOwnership by owner only', async () => {
-        const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
-        await ERC20MintableToken2Instance.init('t2','t2');
-        const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new();
-        await currencyInstance.init('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-      
+        
         await truffleAssert.reverts(
-            currencyInstance.transferOwnership(accountTwo, { from: accountTwo }), 
+            this.currencyInstance.transferOwnership(accountTwo, { from: accountTwo }), 
             "Ownable: caller is not the owner."
         );
         
-        await currencyInstance.transferOwnership(accountTwo, { from: accountOne });
+        await this.currencyInstance.transferOwnership(accountTwo, { from: accountOne });
     });
 
     it('should add address TokenForClaiming to list', async () => {
-        const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
-        await ERC20MintableToken2Instance.init('t2','t2');
-        const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new();
-        await currencyInstance.init('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-        const ERC20MintableTokenInstance = await ERC20MintableToken.new();
-        await ERC20MintableTokenInstance.init('t2','t2');
         
         await truffleAssert.reverts(
-            currencyInstance.claimingTokenAdd(ERC20MintableTokenInstance.address, { from: accountTwo }), 
+            this.currencyInstance.claimingTokenAdd(this.ERC20MintableTokenInstance.address, { from: accountTwo }), 
             "Ownable: caller is not the owner."
         );
         
         await truffleAssert.reverts(
-            currencyInstance.claimingTokenAdd(accountThree, { from: accountOne }), 
+            this.currencyInstance.claimingTokenAdd(accountThree, { from: accountOne }), 
             "tokenForClaiming must be a contract address"
         );
         // add to claim list
-        await currencyInstance.claimingTokenAdd(ERC20MintableTokenInstance.address, { from: accountOne });
+        await this.currencyInstance.claimingTokenAdd(this.ERC20MintableTokenInstance.address, { from: accountOne });
         
-        let list = (await currencyInstance.claimingTokensView({ from: accountOne }));
+        let list = (await this.currencyInstance.claimingTokensView({ from: accountOne }));
         
         assert.notEqual(
-            list.indexOf(ERC20MintableTokenInstance.address),
+            list.indexOf(this.ERC20MintableTokenInstance.address),
             -1,
             "TokenForClaiming does not added in list as expected");
     });
 
     it('should revert claim if it wasn\'t approve tokens before', async () => {
-        // setup
-        const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
-        await ERC20MintableToken2Instance.init('t2','t2');
-        const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new();
-        await currencyInstance.init('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-        const ERC20MintableTokenInstance = await ERC20MintableToken.new();
-        await ERC20MintableTokenInstance.init('t2','t2');
+        
         
         const grantAmount = (10*10**18).toString(16);
         
         // add to claim list
-        await currencyInstance.claimingTokenAdd(ERC20MintableTokenInstance.address, { from: accountOne });
+        await this.currencyInstance.claimingTokenAdd(this.ERC20MintableTokenInstance.address, { from: accountOne });
         
         // mint to ERC20MintableToken
-        await ERC20MintableTokenInstance.mint(accountTwo, '0x'+grantAmount, { from: accountOne });
+        await this.ERC20MintableTokenInstance.mint(accountTwo, '0x'+grantAmount, { from: accountOne });
         
         //
         await truffleAssert.reverts(
-            currencyInstance.claim({ from: accountTwo }), 
+            this.currencyInstance.claim({ from: accountTwo }), 
             "Amount exceeds allowed balance"
         );
     });
 
     it('should revert claim if it wasn\'t added TokenForClaiming before', async () => {
-        // setup
-        const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
-        await ERC20MintableToken2Instance.init('t2','t2');
-        const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new();
-        await currencyInstance.init('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-        const ERC20MintableTokenInstance = await ERC20MintableToken.new();
-        await ERC20MintableTokenInstance.init('t2','t2');
         
         const grantAmount = (10*10**18).toString(16);
         
         // mint to ERC20MintableToken
-        await ERC20MintableTokenInstance.mint(accountTwo, '0x'+grantAmount, { from: accountOne });
+        await this.ERC20MintableTokenInstance.mint(accountTwo, '0x'+grantAmount, { from: accountOne });
         
         //make approve
-        await ERC20MintableTokenInstance.approve(currencyInstance.address, '0x'+grantAmount, { from: accountTwo });
+        await this.ERC20MintableTokenInstance.approve(this.currencyInstance.address, '0x'+grantAmount, { from: accountTwo });
         
         //
         await truffleAssert.reverts(
-            currencyInstance.claim({ from: accountTwo }), 
+            this.currencyInstance.claim({ from: accountTwo }), 
             "There are no allowed tokens for claiming"
         );
         
@@ -135,35 +117,27 @@ contract('Currency', (accounts) => {
 
     it('should claim to account', async () => {
       
-        // setup
-        const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
-        await ERC20MintableToken2Instance.init('t2','t2');
-        const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new();
-        await currencyInstance.init('t1','t1', ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-        const ERC20MintableTokenInstance = await ERC20MintableToken.new();
-        await ERC20MintableTokenInstance.init('t2','t2');
+        
         const currentBlockInfo = await web3.eth.getBlock("latest");
         const grantAmount = (10*10**18).toString(16);
      
          // Get initial balances of second account.
-        const accountTwoStartingBalance = (await currencyInstance.balanceOf.call(accountTwo));
+        const accountTwoStartingBalance = (await this.currencyInstance.balanceOf.call(accountTwo));
         
          // add to claim list
-        await currencyInstance.claimingTokenAdd(ERC20MintableTokenInstance.address, { from: accountOne });
+        await this.currencyInstance.claimingTokenAdd(this.ERC20MintableTokenInstance.address, { from: accountOne });
         
         // mint to ERC20MintableToken
-        await ERC20MintableTokenInstance.mint(accountTwo, '0x'+grantAmount, { from: accountOne });
+        await this.ERC20MintableTokenInstance.mint(accountTwo, '0x'+grantAmount, { from: accountOne });
         
         //make approve
-        await ERC20MintableTokenInstance.approve(currencyInstance.address, '0x'+grantAmount, { from: accountTwo });
+        await this.ERC20MintableTokenInstance.approve(this.currencyInstance.address, '0x'+grantAmount, { from: accountTwo });
         
         // claim()
-        await currencyInstance.claim({ from: accountTwo });
+        await this.currencyInstance.claim({ from: accountTwo });
         
         // Get balances of first and second account after the transactions.
-        const accountTwoEndingBalance = (await currencyInstance.balanceOf.call(accountTwo));
+        const accountTwoEndingBalance = (await this.currencyInstance.balanceOf.call(accountTwo));
 
         assert.equal(
             new BN(accountTwoEndingBalance,16).toString(16),
@@ -174,35 +148,32 @@ contract('Currency', (accounts) => {
     });    
 
     it('should prevent transfer if not in community `whitelist` role', async () => {
-        const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
-        await ERC20MintableToken2Instance.init('t2','t2');
-        const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new();
-        await currencyInstance.init('t1','t1',ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRoleWrong);
+        
+        this.currencyInstance = await Currency.new();
+        await this.currencyInstance.init('t1','t1',this.ERC20MintableToken2Instance.address, this.pricesContractInstance.address, this.CommunityMockInstance.address, inviterCommission, membersRoleWrong);
         const amountT2SendToContract = (10*10**18).toString(16);; // 10 token2
         
         
         
-        const instanceToken2StartingBalance = (await ERC20MintableToken2Instance.balanceOf.call(currencyInstance.address));
-        const instanceToken1StartingBalance = (await currencyInstance.totalSupply());
+        const instanceToken2StartingBalance = (await this.ERC20MintableToken2Instance.balanceOf.call(this.currencyInstance.address));
+        const instanceToken1StartingBalance = (await this.currencyInstance.totalSupply());
         // Get initial token balances of second account.
-        const accountTwoToken1StartingBalance = (await currencyInstance.balanceOf.call(accountTwo));
-        const accountTwoToken2StartingBalance = (await ERC20MintableToken2Instance.balanceOf.call(accountTwo));
+        const accountTwoToken1StartingBalance = (await this.currencyInstance.balanceOf.call(accountTwo));
+        const accountTwoToken2StartingBalance = (await this.ERC20MintableToken2Instance.balanceOf.call(accountTwo));
         
         
-        await ERC20MintableToken2Instance.mint(accountTwo, '0x'+amountT2SendToContract, { from: accountOne });
+        await this.ERC20MintableToken2Instance.mint(accountTwo, '0x'+amountT2SendToContract, { from: accountOne });
         
         
         // send Token2 to Contract
-        await ERC20MintableToken2Instance.approve(currencyInstance.address, '0x'+amountT2SendToContract, { from: accountTwo });
-        await currencyInstance.receiveERC20Token2(false, { from: accountTwo });
+        await this.ERC20MintableToken2Instance.approve(this.currencyInstance.address, '0x'+amountT2SendToContract, { from: accountTwo });
+        await this.currencyInstance.receiveERC20Token2(false, { from: accountTwo });
         //---
-        const instanceToken2EndingBalance = (await ERC20MintableToken2Instance.balanceOf.call(currencyInstance.address));
-        const instanceToken1EndingBalance = (await currencyInstance.totalSupply());
+        const instanceToken2EndingBalance = (await this.ERC20MintableToken2Instance.balanceOf.call(this.currencyInstance.address));
+        const instanceToken1EndingBalance = (await this.currencyInstance.totalSupply());
         // Get initial token balances of second account.
-        const accountTwoToken1EndingBalance = (await currencyInstance.balanceOf.call(accountTwo));
-        const accountTwoToken2EndingBalance = (await ERC20MintableToken2Instance.balanceOf.call(accountTwo));
+        const accountTwoToken1EndingBalance = (await this.currencyInstance.balanceOf.call(accountTwo));
+        const accountTwoToken2EndingBalance = (await this.ERC20MintableToken2Instance.balanceOf.call(accountTwo));
         
         assert.equal(
             (new BN(instanceToken2StartingBalance+'',16).add(new BN(amountT2SendToContract+'',16))).toString(16), 
@@ -220,42 +191,35 @@ contract('Currency', (accounts) => {
         );
 
         await truffleAssert.reverts(
-            currencyInstance.transfer(currencyInstance.address, '0x'+(new BN(accountTwoToken1EndingBalance+'',10)).toString(16), { from: accountTwo }), 
+            this.currencyInstance.transfer(this.currencyInstance.address, '0x'+(new BN(accountTwoToken1EndingBalance+'',10)).toString(16), { from: accountTwo }), 
             "Sender is not in whitelist"
         );
 
     });   
     
     it('should exchange Token/Token2', async () => {
-        const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
-        await ERC20MintableToken2Instance.init('t2','t2');
-        const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new();
-        await currencyInstance.init('t1','t1',ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
+        
         const amountT2SendToContract = (10*10**18).toString(16);; // 10 token2
         
-        
-        
-        const instanceToken2StartingBalance = (await ERC20MintableToken2Instance.balanceOf.call(currencyInstance.address));
-        const instanceToken1StartingBalance = (await currencyInstance.totalSupply());
+        const instanceToken2StartingBalance = (await this.ERC20MintableToken2Instance.balanceOf.call(this.currencyInstance.address));
+        const instanceToken1StartingBalance = (await this.currencyInstance.totalSupply());
         // Get initial token balances of second account.
-        const accountTwoToken1StartingBalance = (await currencyInstance.balanceOf.call(accountTwo));
-        const accountTwoToken2StartingBalance = (await ERC20MintableToken2Instance.balanceOf.call(accountTwo));
+        const accountTwoToken1StartingBalance = (await this.currencyInstance.balanceOf.call(accountTwo));
+        const accountTwoToken2StartingBalance = (await this.ERC20MintableToken2Instance.balanceOf.call(accountTwo));
         
         
-        await ERC20MintableToken2Instance.mint(accountTwo, '0x'+amountT2SendToContract, { from: accountOne });
+        await this.ERC20MintableToken2Instance.mint(accountTwo, '0x'+amountT2SendToContract, { from: accountOne });
         
         
         // send Token2 to Contract
-        await ERC20MintableToken2Instance.approve(currencyInstance.address, '0x'+amountT2SendToContract, { from: accountTwo });
-        await currencyInstance.receiveERC20Token2(false, { from: accountTwo });
+        await this.ERC20MintableToken2Instance.approve(this.currencyInstance.address, '0x'+amountT2SendToContract, { from: accountTwo });
+        await this.currencyInstance.receiveERC20Token2(false, { from: accountTwo });
         //---
-        const instanceToken2EndingBalance = (await ERC20MintableToken2Instance.balanceOf.call(currencyInstance.address));
-        const instanceToken1EndingBalance = (await currencyInstance.totalSupply());
+        const instanceToken2EndingBalance = (await this.ERC20MintableToken2Instance.balanceOf.call(this.currencyInstance.address));
+        const instanceToken1EndingBalance = (await this.currencyInstance.totalSupply());
         // Get initial token balances of second account.
-        const accountTwoToken1EndingBalance = (await currencyInstance.balanceOf.call(accountTwo));
-        const accountTwoToken2EndingBalance = (await ERC20MintableToken2Instance.balanceOf.call(accountTwo));
+        const accountTwoToken1EndingBalance = (await this.currencyInstance.balanceOf.call(accountTwo));
+        const accountTwoToken2EndingBalance = (await this.ERC20MintableToken2Instance.balanceOf.call(accountTwo));
         
         assert.equal(
             (new BN(instanceToken2StartingBalance+'',16).add(new BN(amountT2SendToContract+'',16))).toString(16), 
@@ -273,13 +237,13 @@ contract('Currency', (accounts) => {
         );
 
         // try again send token back to contract 
-        await currencyInstance.transfer(currencyInstance.address, '0x'+(new BN(accountTwoToken1EndingBalance+'',10)).toString(16), { from: accountTwo });
+        await this.currencyInstance.transfer(this.currencyInstance.address, '0x'+(new BN(accountTwoToken1EndingBalance+'',10)).toString(16), { from: accountTwo });
         
-        const instanceToken2EndingBalance2 = (await ERC20MintableToken2Instance.balanceOf.call(currencyInstance.address));
-        const instanceToken1EndingBalance2 = (await currencyInstance.totalSupply());
+        const instanceToken2EndingBalance2 = (await this.ERC20MintableToken2Instance.balanceOf.call(this.currencyInstance.address));
+        const instanceToken1EndingBalance2 = (await this.currencyInstance.totalSupply());
         // Get initial token balances of second account.
-        const accountTwoToken1EndingBalance2 = (await currencyInstance.balanceOf.call(accountTwo));
-        const accountTwoToken2EndingBalance2 = (await ERC20MintableToken2Instance.balanceOf.call(accountTwo));
+        const accountTwoToken1EndingBalance2 = (await this.currencyInstance.balanceOf.call(accountTwo));
+        const accountTwoToken2EndingBalance2 = (await this.ERC20MintableToken2Instance.balanceOf.call(accountTwo));
         
         assert.equal(
             new BN(accountTwoToken1EndingBalance2+'',16).toString(16), 
@@ -336,30 +300,22 @@ contract('Currency', (accounts) => {
 
     it('test prices hook', async () => {
         
-        const pricesContractInstance = await PricesContractMock.new();
-        const ERC20MintableToken2Instance = await ERC20MintableToken.new();
-        await ERC20MintableToken2Instance.init('t2','t2');
-        const CommunityMockInstance = await CommunityMock.new();
-        const currencyInstance = await Currency.new();
-        await currencyInstance.init('t1','t1',ERC20MintableToken2Instance.address, pricesContractInstance.address, CommunityMockInstance.address, membersRole);
-        
-        
         const grantAmount2 = (2*10**18).toString(16);
         const grantAmount3 = (3*10**18).toString(16);
         const amountT2SendToContract = (10*10**18).toString(16);; // 10 token2
         
-        await ERC20MintableToken2Instance.mint(accountTwo, '0x'+amountT2SendToContract, { from: accountOne });
+        await this.ERC20MintableToken2Instance.mint(accountTwo, '0x'+amountT2SendToContract, { from: accountOne });
         
         
         // send Token2 to Contract
-        await ERC20MintableToken2Instance.approve(currencyInstance.address, '0x'+amountT2SendToContract, { from: accountTwo });
-        await currencyInstance.receiveERC20Token2(false, { from: accountTwo });
+        await this.ERC20MintableToken2Instance.approve(this.currencyInstance.address, '0x'+amountT2SendToContract, { from: accountTwo });
+        await this.currencyInstance.receiveERC20Token2(false, { from: accountTwo });
         
             
         var ret;
-        await currencyInstance.transfer(accountThree, '0x'+(grantAmount3).toString(16), { from: accountTwo });
+        await this.currencyInstance.transfer(accountThree, '0x'+(grantAmount3).toString(16), { from: accountTwo });
         
-        await currencyInstance.getPastEvents('StatAdded', {
+        await this.currencyInstance.getPastEvents('StatAdded', {
             filter: {addr: accountThree}, 
             fromBlock: 0,
             toBlock: 'latest'
@@ -377,9 +333,9 @@ contract('Currency', (accounts) => {
         });
         assert.isFalse(ret);
 
-        await currencyInstance.transfer(accountFour, '0x'+(grantAmount2).toString(16), { from: accountTwo });
+        await this.currencyInstance.transfer(accountFour, '0x'+(grantAmount2).toString(16), { from: accountTwo });
         
-        await currencyInstance.getPastEvents('StatAdded', {
+        await this.currencyInstance.getPastEvents('StatAdded', {
             filter: {addr: accountFour}, 
             fromBlock: 0,
             toBlock: 'latest'
@@ -396,6 +352,39 @@ contract('Currency', (accounts) => {
         });
         assert.isTrue(ret);
     });
-    
+  
+  it('check reward ', async () => {
+        let amountT2SendToContract = (10*10**18); // 10 token2
+
+        // imitate situation as accountTwo have been invited by accountThree
+        await this.CommunityMockInstance.setSender(accountThree);
+        const accountThreeTokenStartingBalance = (await this.ERC20MintableToken2Instance.balanceOf.call(accountThree));
+        
+        await this.ERC20MintableToken2Instance.mint(accountTwo, '0x'+amountT2SendToContract.toString(16), { from: accountOne });
+                
+        // send Token2 to Contract
+        await this.ERC20MintableToken2Instance.approve(this.currencyInstance.address, '0x'+amountT2SendToContract.toString(16), { from: accountTwo });
+        await this.currencyInstance.receiveERC20Token2(false, { from: accountTwo });
+        
+       
+        const accountThreeTokenEndingBalance = (await this.ERC20MintableToken2Instance.balanceOf.call(accountThree));
+        
+        
+        assert.equal(
+            
+            (
+                BigNumber(parseInt(accountThreeTokenEndingBalance))
+            ).toString(), 
+            (
+                BigNumber(parseInt(accountThreeTokenStartingBalance)).plus(BigNumber(amountT2SendToContract).times(BigNumber(inviterCommission)).div(BigNumber(1e6)))
+            ).toString(), 
+            
+            'reward to inviter was wrong'
+        );
+        
+        
+        
+        
+    });
     
 });

@@ -23,12 +23,13 @@ contract Currency is CurrencyBase {
         address secondary_token,
         IPricesContract pricesContractAddress,
         ICommunity community,
+        uint256 inviterCommission,
         string memory roleName
     ) 
         public 
         initializer 
     {
-        super.init( name, symbol, pricesContractAddress, community, roleName);
+        super.init( name, symbol, pricesContractAddress, community, inviterCommission, roleName);
         require(secondary_token.isContract(), 'secondary_token must be a contract address');
         token2 = secondary_token;
     }
@@ -62,8 +63,8 @@ contract Currency is CurrencyBase {
      * @dev internal overrided method. token2 will be transfer to sender
      * @param amount2send amount of tokens
      */
-    function _receivedTokenAfter(uint256 amount2send) internal virtual override {
-        bool success = IERC20(token2).transfer(_msgSender(),amount2send);
+    function _receivedTokenAfter(address to, uint256 amount2send) internal virtual override {
+        bool success = IERC20(token2).transfer(to,amount2send);
         require(success == true, 'Transfer tokens were failed');    
     }
     
@@ -78,7 +79,14 @@ contract Currency is CurrencyBase {
      * @dev overall tokens(token2) balance of this contract
      */
     function _receivedToken2(uint256 token2Amount) private {
-        _mintedOwnTokens(token2Amount);
+        uint256 token2AmountLeft = invitersRewardProceed(
+            _msgSender(),
+            token2Amount
+        );
+        
+        
+        uint256 nativeTokensAmount = token2AmountLeft.mul(buyExchangeRate()).div(1e6);
+        _mintedOwnTokens(nativeTokensAmount);
     }  
     
     /**

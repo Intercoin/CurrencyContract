@@ -9,9 +9,10 @@ import "@openzeppelin/contracts-ethereum-package/contracts/utils/ReentrancyGuard
 
 import "./Claimed.sol";
 import "./IPricesContract.sol";
-import "./ICommunity.sol";
+import "./interfaces/ICommunity.sol";
+import "./InvitersReward.sol";
 
-contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, ReentrancyGuardUpgradeSafe {
+contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, ReentrancyGuardUpgradeSafe, InvitersReward {
     using SafeMath for uint256;
     using Address for address;
     
@@ -107,6 +108,7 @@ contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, Reentran
         string memory symbol,
         IPricesContract pricesContractAddress,
         ICommunity community,
+        uint256 inviterCommission,
         string memory roleName
     ) 
         public 
@@ -116,7 +118,7 @@ contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, Reentran
         __Ownable_init();
         __ReentrancyGuard_init();
         __ERC20_init(name, symbol);
-		
+		__InvitersReward_init(community, inviterCommission);
 		
         startTime = now;
         pricesAddress = pricesContractAddress;
@@ -307,11 +309,11 @@ contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, Reentran
         uint256 amount2send = tokensAmount.mul(sellExchangeRate()).div(1e6); // "sell exchange" interpretation with rate discount
         require ((amount2send <= balanceToken2 && balanceToken2>0), 'Amount exceeds available balance.');
         
-        _receivedTokenAfter(amount2send);
+        _receivedTokenAfter(_msgSender(), amount2send);
         
     }
     
-    function _receivedTokenAfter(uint256 amount2send) internal virtual {
+    function _receivedTokenAfter(address to, uint256 amount2send) internal virtual {
         // need to be implement in child
     }  
     
@@ -333,9 +335,20 @@ contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, Reentran
         return uint256(1e6);
     }  
     function _mintedOwnTokens(uint256 amount) internal {
-        uint256 amount2mint = amount.mul(buyExchangeRate()).div(1e6); // "buy exchange" interpretation with rate 100%
-        _mint(_msgSender(), amount2mint);
+        
+        _mint(_msgSender(), amount);
     } 
+    
+   function invitersRewardTransfer(
+        address recipient,
+        uint256 amount2send
+    ) 
+        internal
+        override 
+    {
+       
+        _receivedTokenAfter(recipient,amount2send);
+    }
     
 }
 
