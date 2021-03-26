@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0 <0.7.0;
+pragma solidity ^0.8.0;
 
 import "./interfaces/ICommunity.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 contract InvitersReward {
     
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
     
     
     ICommunity community;

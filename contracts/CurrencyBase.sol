@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0 <0.7.0;
+pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 
 import "./Claimed.sol";
-import "./IPricesContract.sol";
+import "./interfaces/IPricesContract.sol";
 import "./interfaces/ICommunity.sol";
 import "./InvitersReward.sol";
 
-contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, ReentrancyGuardUpgradeSafe, InvitersReward {
-    using SafeMath for uint256;
-    using Address for address;
+contract CurrencyBase is ERC20Upgradeable, OwnableUpgradeable, Claimed, ReentrancyGuardUpgradeable, InvitersReward {
+    using SafeMathUpgradeable for uint256;
+    using AddressUpgradeable for address;
     
     // Fraction part. means 1e18
     uint256 constant internal DECIMALS = 10**18;
@@ -103,7 +103,7 @@ contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, Reentran
      * @param community address of CommunityContract
      * @param roleName whitelist role name
      */
-    function init(
+    function __CurrencyBase__init(
         string memory name, 
         string memory symbol,
         IPricesContract pricesContractAddress,
@@ -111,7 +111,7 @@ contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, Reentran
         uint256 inviterCommission,
         string memory roleName
     ) 
-        public 
+        internal 
         initializer 
     {
         
@@ -120,7 +120,7 @@ contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, Reentran
         __ERC20_init(name, symbol);
 		__InvitersReward_init(community, inviterCommission);
 		
-        startTime = now;
+        startTime = block.timestamp;
         pricesAddress = pricesContractAddress;
         
         communityAddress = community;
@@ -190,10 +190,10 @@ contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, Reentran
     function claimingTokensWithdraw() public onlyOwner nonReentrant() {
         
         for (uint256 i = 0; i < tokensForClaimingCount; i++) {
-            uint256 amount = IERC20(tokensForClaiming[i]).balanceOf(address(this));
+            uint256 amount = IERC20Upgradeable(tokensForClaiming[i]).balanceOf(address(this));
             if (amount > 0) {
                 // try to get
-                bool success = IERC20(tokensForClaiming[i]).transferFrom(address(this), owner(), amount);
+                bool success = IERC20Upgradeable(tokensForClaiming[i]).transferFrom(address(this), owner(), amount);
                 require(success == true, 'Transfer tokens were failed'); 
             }
         }
@@ -211,7 +211,7 @@ contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, Reentran
         
         for (uint256 i = 0; i < tokensForClaimingCount; i++) {
         
-            uint256 allowedAmount = IERC20(tokensForClaiming[i]).allowance(_msgSender(), address(this));
+            uint256 allowedAmount = IERC20Upgradeable(tokensForClaiming[i]).allowance(_msgSender(), address(this));
             
             if (allowedAmount > 0) {
             
@@ -226,7 +226,7 @@ contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, Reentran
                     //allow claim without check any restrictions;
                 } else {
                     require(
-                        (claimTotal < claimInitialMax.add(((now).sub(startTime)).mul(claimMorePerSeconds))), 
+                        (claimTotal < claimInitialMax.add(((block.timestamp).sub(startTime)).mul(claimMorePerSeconds))), 
                         'This many tokens are not available to be claimed yet' 
                     );
                     require(
@@ -249,14 +249,14 @@ contract CurrencyBase is ERC20UpgradeSafe, OwnableUpgradeSafe, Claimed, Reentran
                 
                 
                 // try to get
-                bool success = IERC20(tokensForClaiming[i]).transferFrom(_msgSender(), address(this), allowedAmount);
+                bool success = IERC20Upgradeable(tokensForClaiming[i]).transferFrom(_msgSender(), address(this), allowedAmount);
                 require(success == true, 'Transfer tokens were failed'); 
                 
                 // claim own tokens
                 _mint(_msgSender(), amount);
                 
                 //
-                addClaimLimit(_msgSender(), amount, now.add(claimLockupPeriod), claimGradual);
+                addClaimLimit(_msgSender(), amount, block.timestamp.add(claimLockupPeriod), claimGradual);
             }
         }
         require(hasAllowedAmount == true, 'Amount exceeds allowed balance');

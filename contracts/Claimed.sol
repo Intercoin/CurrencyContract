@@ -1,13 +1,14 @@
-pragma solidity >=0.6.0 <0.7.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 /**
  * Realization a restriction limits for user transfer
  * 
  */
 contract Claimed {
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
     
     // user allowance
     struct ClaimStruct {
@@ -26,11 +27,11 @@ contract Claimed {
      * @param gradual if true then limit is gradually decreasing
      */
     function addClaimLimit(address recipient, uint256 amount, uint256 endTime, bool gradual) internal {
-        require(now <= endTime, "endTime need to be more than current timestamp");
+        require(block.timestamp <= endTime, "endTime need to be more than current timestamp");
         
         ClaimStruct memory newClaim = ClaimStruct({
             amount: amount, 
-            startTime: now, 
+            startTime: block.timestamp, 
             endTime: endTime, 
             gradual: gradual
         });
@@ -55,7 +56,7 @@ contract Claimed {
         for (uint256 i = 0; i < claimCount; i++) {
             
             // loop by expired and delete them from array by exchanging from last element to current
-            while (now > _claimed[recipient][i].endTime && claimCount > 0) {
+            while (block.timestamp > _claimed[recipient][i].endTime && claimCount > 0) {
                 tmpIndex = _claimed[recipient].length - 1;
                 
                 if (i != tmpIndex) {
@@ -82,7 +83,7 @@ contract Claimed {
                 // calculate how much amount descreasing per second
                 tmpPerSecond = (_claimed[recipient][i].amount).div(_claimed[recipient][i].endTime.sub(_claimed[recipient][i].startTime));
                 // and now sub
-                minimum = minimum.sub((now.sub(_claimed[recipient][i].startTime)).mul(tmpPerSecond));
+                minimum = minimum.sub((block.timestamp.sub(_claimed[recipient][i].startTime)).mul(tmpPerSecond));
             }
         }
     }
@@ -96,7 +97,7 @@ contract Claimed {
         uint256 claimCount = _claimed[recipient].length;
         for (uint256 i = 0; i < claimCount; i++) {
 
-            if (now < _claimed[recipient][i].endTime) {
+            if (block.timestamp < _claimed[recipient][i].endTime) {
                 minimum = minimum.add(_claimed[recipient][i].amount);
                 
                 // if gradual then minimum decreasing until reached endTime
@@ -104,7 +105,7 @@ contract Claimed {
                     // calculate how much amount descreasing per second
                     tmpPerSecond = (_claimed[recipient][i].amount).div(_claimed[recipient][i].endTime.sub(_claimed[recipient][i].startTime));
                     // and now sub
-                    minimum = minimum.sub((now.sub(_claimed[recipient][i].startTime)).mul(tmpPerSecond));
+                    minimum = minimum.sub((block.timestamp.sub(_claimed[recipient][i].startTime)).mul(tmpPerSecond));
                 }
             }
         }

@@ -1,12 +1,41 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0 <0.7.0;
+pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./CurrencyBase.sol";
-import "./IPricesContract.sol";
+import "./interfaces/IPricesContract.sol";
 
 contract CurrencyETHOnly is CurrencyBase {
     
+    using SafeMathUpgradeable for uint256;
+    
+    /**
+     * @param name Token name
+     * @param symbol Token symbol
+     * @param pricesContractAddress address of PricesContract
+     * @param community address of CommunityContract
+     * @param roleName whitelist role name
+     */
+    function init(
+        string memory name, 
+        string memory symbol,
+        IPricesContract pricesContractAddress,
+        ICommunity community,
+        uint256 inviterCommission,
+        string memory roleName
+    ) 
+        public
+        initializer 
+    {
+        __CurrencyBase__init(
+            name, 
+            symbol,
+            pricesContractAddress,
+            community,
+            inviterCommission,
+            roleName
+        );
+    }
     /**
      * Used for donate ETH without receiving token
      */

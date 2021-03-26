@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0 <0.7.0;
+pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./CurrencyBase.sol";
-import "./IPricesContract.sol";
+import "./interfaces/IPricesContract.sol";
 
 contract Currency is CurrencyBase {
-    using Address for address;
+    using SafeMathUpgradeable for uint256;
+    using AddressUpgradeable for address;
     
     address private token2;
     
@@ -29,7 +30,15 @@ contract Currency is CurrencyBase {
         public 
         initializer 
     {
-        super.init( name, symbol, pricesContractAddress, community, inviterCommission, roleName);
+        __CurrencyBase__init(
+            name, 
+            symbol,
+            pricesContractAddress,
+            community,
+            inviterCommission,
+            roleName
+        );
+        
         require(secondary_token.isContract(), 'secondary_token must be a contract address');
         token2 = secondary_token;
     }
@@ -48,12 +57,12 @@ contract Currency is CurrencyBase {
      * @param isDonate if set true, contract will not send tokens
      */
     function receiveERC20Token2(bool isDonate) validGasPrice public nonReentrant() {
-        uint256 _allowedAmount = IERC20(token2).allowance(_msgSender(), address(this));
+        uint256 _allowedAmount = IERC20Upgradeable(token2).allowance(_msgSender(), address(this));
         
         require(_allowedAmount > 0, 'Amount exceeds allowed balance');
         
         // try to get
-        bool success = IERC20(token2).transferFrom(_msgSender(), address(this), _allowedAmount);
+        bool success = IERC20Upgradeable(token2).transferFrom(_msgSender(), address(this), _allowedAmount);
         require(success == true, 'Transfer tokens were failed'); 
         if (!isDonate) {
             _receivedToken2(_allowedAmount);
@@ -64,7 +73,7 @@ contract Currency is CurrencyBase {
      * @param amount2send amount of tokens
      */
     function _receivedTokenAfter(address to, uint256 amount2send) internal virtual override {
-        bool success = IERC20(token2).transfer(to,amount2send);
+        bool success = IERC20Upgradeable(token2).transfer(to,amount2send);
         require(success == true, 'Transfer tokens were failed');    
     }
     
@@ -72,7 +81,7 @@ contract Currency is CurrencyBase {
      * @dev overall tokens(token2) balance of this contract
      */
     function _overallBalance2() internal virtual override returns(uint256) {
-        return IERC20(token2).balanceOf(address(this));
+        return IERC20Upgradeable(token2).balanceOf(address(this));
     }
     
     /**

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0 <0.7.0;
+pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "../Currency.sol";
-import "../IPricesContract.sol";
+import "../interfaces/IPricesContract.sol";
 
 contract CurrencyMock is Currency {
     
@@ -20,7 +20,7 @@ contract CurrencyMock is Currency {
     }
  
     function getNow() public view returns( uint256) {
-        return now;
+        return block.timestamp;
     }
     
 }
