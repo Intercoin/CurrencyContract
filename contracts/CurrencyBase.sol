@@ -11,8 +11,9 @@ import "./Claimed.sol";
 import "./interfaces/IPricesContract.sol";
 import "./interfaces/ICommunity.sol";
 import "./InvitersReward.sol";
+import "./IntercoinTrait.sol";
 
-contract CurrencyBase is ERC20Upgradeable, OwnableUpgradeable, Claimed, ReentrancyGuardUpgradeable, InvitersReward {
+contract CurrencyBase is ERC20Upgradeable, OwnableUpgradeable, Claimed, ReentrancyGuardUpgradeable, InvitersReward, IntercoinTrait {
     using SafeMathUpgradeable for uint256;
     using AddressUpgradeable for address;
     
